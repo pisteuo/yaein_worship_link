@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Space Booking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1rem 2rem;
+            text-align: center;
+        }
+        .container {
+            padding: 2rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+        td.available {
+            background-color: #dff0d8;
+        }
+        td.booked {
+            background-color: #f8d7da;
+        }
+        td:hover {
+            background-color: #cce5ff;
+        }
+        footer {
+            text-align: center;
+            padding: 1rem;
+            background-color: #4CAF50;
+            color: white;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+        #popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 1px solid #ccc;
+            padding: 2rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+        #popup input {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        #popup button {
+            padding: 0.5rem 1rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        #popup button:hover {
+            background-color: #45a049;
+        }
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Weekly Space Booking</h1>
+</header>
+
+<div class="container">
+    <h2>Weekly Schedule</h2>
+    <p id="dateRange"></p>
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Sunday</th>
+                <th>Monday</th>
+                <th>Tuesday</th>
+                <th>Wednesday</th>
+                <th>Thursday</th>
+                <th>Friday</th>
+                <th>Saturday</th>
+            </tr>
+        </thead>
+        <tbody id="scheduleTable">
+            <!-- Dynamic Rows Will Be Added Here -->
+        </tbody>
+    </table>
+</div>
+
+<div id="popup">
+    <h3>예약 정보 입력</h3>
+    <input type="text" id="departmentInput" placeholder="사용부서를 입력하세요" />
+    <button id="confirmButton">확인</button>
+    <button id="cancelButton">취소</button>
+</div>
+<div id="overlay"></div>
+
+<footer>
+    &copy; 2025 Weekly Space Booking System
+</footer>
+
+<script>
+    const scheduleTable = document.getElementById('scheduleTable');
+    const popup = document.getElementById('popup');
+    const overlay = document.getElementById('overlay');
+    const departmentInput = document.getElementById('departmentInput');
+    const confirmButton = document.getElementById('confirmButton');
+    const cancelButton = document.getElementById('cancelButton');
+    const dateRange = document.getElementById('dateRange');
+
+    const times = ['09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'];
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    let selectedCell = null;
+
+    function getThisWeekRange() {
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+        const sunday = new Date(today);
+        sunday.setDate(today.getDate() - dayOfWeek);
+        const saturday = new Date(sunday);
+        saturday.setDate(sunday.getDate() + 6);
+
+        const formatDate = (date) => `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`;
+
+        return `${formatDate(sunday)} ~ ${formatDate(saturday)}`;
+    }
+
+    function initializeSchedule() {
+        dateRange.textContent = getThisWeekRange();
+
+        times.forEach(time => {
+            const row = document.createElement('tr');
+            const timeCell = document.createElement('td');
+            timeCell.textContent = time;
+            row.appendChild(timeCell);
+
+            days.forEach(day => {
+                const cell = document.createElement('td');
+                cell.classList.add('available');
+                cell.dataset.time = time;
+                cell.dataset.day = day;
+                cell.textContent = '사용가능';
+
+                cell.addEventListener('click', () => openPopup(cell));
+
+                row.appendChild(cell);
+            });
+
+            scheduleTable.appendChild(row);
+        });
+    }
+
+    function openPopup(cell) {
+        if (cell.classList.contains('booked')) {
+            alert('이 시간은 이미 예약되었습니다.');
+            return;
+        }
+        selectedCell = cell;
+        departmentInput.value = '';
+        popup.style.display = 'block';
+        overlay.style.display = 'block';
+    }
+
+    function closePopup() {
+        popup.style.display = 'none';
+        overlay.style.display = 'none';
+        selectedCell = null;
+    }
+
+    confirmButton.addEventListener('click', () => {
+        const department = departmentInput.value.trim();
+        if (!department) {
+            alert('사용부서를 입력해주세요.');
+            return;
+        }
+        selectedCell.classList.remove('available');
+        selectedCell.classList.add('booked');
+        selectedCell.textContent = department;
+        closePopup();
+    });
+
+    cancelButton.addEventListener('click', closePopup);
+
+    overlay.addEventListener('click', closePopup);
+
+    initializeSchedule();
+</script>
+
+</body>
+</html>
